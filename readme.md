@@ -6,17 +6,17 @@ gere o certificado .PEM e não separe a secret key
 
 1. crie um arquivo um .env com as seguintes configurações (produção ou homologação)
 
-EFI_CLIENT_ID=seu client id
+   EFI_CLIENT_ID=seu client id
 
-EFI_CLIENT_SECRET=seu client secret
+   EFI_CLIENT_SECRET=seu client secret
 
-EFI_SANDBOX=false (colocar true se for homologação)
+   EFI_SANDBOX=false (colocar true se for homologação)
 
-EFI_CERTIFICATE_PATH=seu certificado (necessario ser no formato .pem)
+   EFI_CERTIFICATE_PATH=seu certificado (necessario ser no formato .pem)
 
-EFI_PIX_KEY=sua chave pix do efibank
+   EFI_PIX_KEY=sua chave pix do efibank
 
-FLASK_SECRET_KEY=senhafortealeatoriatmj
+   FLASK_SECRET_KEY=senhafortealeatoriatmj
 
 2. Colocar o certificado na raiz do projeto 
 
