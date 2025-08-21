@@ -3,10 +3,14 @@ import os
 import logging
 import uuid
 import traceback
+import qrcode
+import base64
+from io import BytesIO
 from datetime import datetime
 from flask import Flask, render_template, request, jsonify, session
 from dotenv import load_dotenv
 from efipay import EfiPay
+
 
 # Corrigir o caminho da pasta de templates
 template_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')
@@ -104,7 +108,7 @@ def gerar_qrcode():
         cobranca = efi.pix_create_immediate_charge(params=params, body=body)
         logger.info(f"Resposta da criação de cobrança: {cobranca}")
         
-        # Obter o txid retornado pela EFI (pode ser diferente do que enviamos)
+        # Obter o txid retornado pela EFI
         txid_efi = cobranca['txid']
         logger.info(f"TXID retornado pela EFI: {txid_efi}")
 
@@ -112,25 +116,40 @@ def gerar_qrcode():
         loc_id = cobranca['loc']['id']
         logger.info(f"Location ID obtido: {loc_id}")
         
-        # Gerar QR Code
+        # Gerar string do QR Code
         qr_params = {
             'id': loc_id
         }
         logger.info(f"Gerando QR Code com params: {qr_params}")
         
-        qrcode = efi.pix_generate_qrcode(params=qr_params)
-        logger.info(f"Resposta do QR Code: {qrcode}")
+        qrcode_data = efi.pix_generate_qrcode(params=qr_params)
+        logger.info(f"Resposta do QR Code: {qrcode_data}")
         
-        # Salvar txid (o retornado pela EFI) na sessão para verificação posterior
+        # Gerar imagem localmente a partir da string retornada
+        qr = qrcode.QRCode(
+            version=1,
+            error_correction=qrcode.constants.ERROR_CORRECT_L,
+            box_size=10,
+            border=4,
+        )
+        qr.add_data(qrcode_data['qrcode'])
+        qr.make(fit=True)
+
+        img = qr.make_image(fill_color="black", back_color="white")
+        buffered = BytesIO()
+        img.save(buffered, format="PNG")
+        img_str = base64.b64encode(buffered.getvalue()).decode()
+
+        # Salvar txid na sessão
         session['txid'] = txid_efi
         session['valor'] = PRODUTO_TESTE['valor']
         logger.info(f"TXID salvo na sessão: {txid_efi}")
         
         return jsonify({
             'success': True,
-            'qrcode': qrcode.get('qrcode'),
-            'imagemQrcode': qrcode.get('imagemQrcode'),
-            'txid': txid_efi,  # Retornar o txid da EFI
+            'qrcode': qrcode_data['qrcode'],
+            'imagemQrcode': img_str,  # sempre nossa imagem gerada
+            'txid': txid_efi,
             'valor': PRODUTO_TESTE['valor']
         })
         

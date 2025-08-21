@@ -1,3 +1,4 @@
 Flask
 python-dotenv
 efipay
+qrcode[pil]
