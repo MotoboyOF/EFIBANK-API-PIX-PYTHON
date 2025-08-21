@@ -1,8 +1,8 @@
 Projeto feito para testar sua API da EFIBANK, para recebimento automatico de PIX
 acesse o site da efi bank pelo computador, vá em aplicações e gere uma nova aplicação com as autorizaões necessarias e pegue o certificado
 
-0. Jogue seu certificado na pasta do conversor e executa o .bat, 
-gere o certificado e não separe a secret key
+0. Jogue seu certificado .P12 na pasta do conversor e execute o .bat, 
+gere o certificado .PEM e não separe a secret key
 
 1. crie um arquivo um .env com as seguintes configurações (produção ou homologação)
 
