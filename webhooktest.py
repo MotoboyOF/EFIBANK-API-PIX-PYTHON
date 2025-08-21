@@ -129,8 +129,8 @@ def gerar_qrcode():
         qr = qrcode.QRCode(
             version=1,
             error_correction=qrcode.constants.ERROR_CORRECT_L,
-            box_size=10,
-            border=4,
+            box_size=6,
+            border=2,
         )
         qr.add_data(qrcode_data['qrcode'])
         qr.make(fit=True)
@@ -232,6 +232,28 @@ def webhook_pix():
         logger.error(f"Erro no webhook: {str(e)}")
         logger.error(traceback.format_exc())
         return jsonify({'status': 'error'}), 500
+    
+@app.route('/cancelar-pix', methods=['POST'])
+def cancelar_pix():
+    try:
+        txid = session.get('txid')
+        if txid:
+            logger.info(f"Cancelando PIX com TXID: {txid}")
+            
+            params = { 'txid': txid }
+            body = { 'status': 'REMOVIDA_PELO_USUARIO_RECEBEDOR' }
+            
+            efi.pix_update_charge(params=params, body=body)
+            logger.info(f"Cobrança {txid} cancelada")
+            
+            session.pop('txid', None)
+        
+        return jsonify({'success': True})
+        
+    except Exception as e:
+        logger.error(f"Erro ao cancelar PIX: {str(e)}")
+        logger.error(traceback.format_exc())
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/teste-api')
 def teste_api():

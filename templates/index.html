@@ -1,6 +1,7 @@
 <!-- templates/index.html -->
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,21 +14,25 @@
             padding: 20px;
             background-color: #f5f5f5;
         }
+
         .container {
             background-color: white;
             padding: 20px;
             border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
+
         .product {
             text-align: center;
             margin-bottom: 20px;
         }
+
         .price {
             font-size: 24px;
             font-weight: bold;
             color: #2c3e50;
         }
+
         button {
             background-color: #3498db;
             color: white;
@@ -37,18 +42,22 @@
             cursor: pointer;
             font-size: 16px;
         }
+
         button:hover {
             background-color: #2980b9;
         }
+
         button:disabled {
             background-color: #95a5a6;
             cursor: not-allowed;
         }
+
         .qrcode-container {
             text-align: center;
             margin: 20px 0;
             display: none;
         }
+
         .status {
             margin-top: 20px;
             padding: 10px;
@@ -56,20 +65,38 @@
             text-align: center;
             display: none;
         }
+
         .success {
             background-color: #d4edda;
             color: #155724;
         }
+
         .pending {
             background-color: #fff3cd;
             color: #856404;
         }
+
         .error {
             background-color: #f8d7da;
             color: #721c24;
         }
+
+        #btn-cancelar-pix {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        #btn-cancelar-pix:hover {
+            background-color: #c0392b;
+        }
     </style>
 </head>
+
 <body>
     <div class="container">
         <div class="product">
@@ -77,90 +104,95 @@
             <p>{{ produto.descricao }}</p>
             <div class="price">R$ {{ "%.2f"|format(produto.valor) }}</div>
         </div>
-        
+
         <div style="text-align: center;">
             <button id="btn-gerar-pix">Pagar com PIX</button>
         </div>
-        
+
         <div class="qrcode-container" id="qrcode-container">
             <h3>Escaneie o QR Code para pagar</h3>
             <div id="qrcode-image"></div>
             <p>Ou copie o código PIX:</p>
             <textarea id="pix-code" rows="4" style="width: 100%;" readonly></textarea>
+            <br>
+            <button id="btn-cancelar-pix" style="background-color: #e74c3c; margin-top: 10px;">
+                Cancelar PIX
+            </button>
         </div>
-        
+
         <div class="status pending" id="status-pending">
             Aguardando confirmação do pagamento...
         </div>
-        
+
         <div class="status success" id="status-success">
             Pagamento confirmado! Obrigado pela compra.
         </div>
-        
+
         <div class="status error" id="status-error">
             Erro no processamento. Tente novamente.
         </div>
     </div>
 
     <script>
-        document.getElementById('btn-gerar-pix').addEventListener('click', function() {
+        document.getElementById('btn-gerar-pix').addEventListener('click', function () {
             this.disabled = true;
             this.textContent = 'Gerando...';
-            
+
             // Esconder mensagens anteriores
             document.getElementById('status-pending').style.display = 'none';
             document.getElementById('status-success').style.display = 'none';
             document.getElementById('status-error').style.display = 'none';
-            
+
             fetch('/gerar-qrcode', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 }
             })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Mostrar QR Code
-                    if (data.imagemQrcode) {
-                        document.getElementById('qrcode-image').innerHTML = 
-                            `<img src="data:image/png;base64,${data.imagemQrcode}" alt="QR Code PIX">`;
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Mostrar QR Code
+                        if (data.imagemQrcode) {
+                            document.getElementById('qrcode-image').innerHTML =
+                                `<img src="data:image/png;base64,${data.imagemQrcode}" alt="QR Code PIX">`;
+                        }
+
+                        // Mostrar código PIX
+                        document.getElementById('pix-code').value = data.qrcode;
+                        document.getElementById('qrcode-container').style.display = 'block';
+
+                        // Iniciar verificação do pagamento
+                        verificarPagamento();
+                    } else {
+                        document.getElementById('status-error').style.display = 'block';
+                        document.getElementById('status-error').textContent = 'Erro: ' + data.error;
+                        document.getElementById('btn-gerar-pix').disabled = false;
+                        document.getElementById('btn-gerar-pix').textContent = 'Tentar novamente';
                     }
-                    
-                    // Mostrar código PIX
-                    document.getElementById('pix-code').value = data.qrcode;
-                    document.getElementById('qrcode-container').style.display = 'block';
-                    
-                    // Iniciar verificação do pagamento
-                    verificarPagamento();
-                } else {
+                })
+                .catch(error => {
+                    console.error('Erro:', error);
                     document.getElementById('status-error').style.display = 'block';
-                    document.getElementById('status-error').textContent = 'Erro: ' + data.error;
                     document.getElementById('btn-gerar-pix').disabled = false;
                     document.getElementById('btn-gerar-pix').textContent = 'Tentar novamente';
-                }
-            })
-            .catch(error => {
-                console.error('Erro:', error);
-                document.getElementById('status-error').style.display = 'block';
-                document.getElementById('btn-gerar-pix').disabled = false;
-                document.getElementById('btn-gerar-pix').textContent = 'Tentar novamente';
-            });
+                });
         });
-        
+
         function verificarPagamento() {
             document.getElementById('status-pending').style.display = 'block';
-            
+
             // Verificar pagamento a cada 5 segundos
-            const interval = setInterval(() => {
+            window.paymentInterval = setInterval(() => {
                 fetch('/verificar-pagamento')
                     .then(response => response.json())
                     .then(data => {
                         if (data.success && data.pago) {
                             // Pagamento confirmado
-                            clearInterval(interval);
+                            clearInterval(window.paymentInterval);
                             document.getElementById('status-pending').style.display = 'none';
                             document.getElementById('status-success').style.display = 'block';
+                            document.getElementById('qrcode-container').style.display = 'none'; // Nova linha
                         } else if (data.success && !data.pago) {
                             // Ainda aguardando pagamento
                             console.log('Aguardando pagamento...');
@@ -174,6 +206,27 @@
                     });
             }, 5000);
         }
+
+        document.getElementById('btn-cancelar-pix').addEventListener('click', function () {
+            if (window.paymentInterval) {
+                clearInterval(window.paymentInterval);
+            }
+
+            document.getElementById('qrcode-container').style.display = 'none';
+            document.getElementById('btn-gerar-pix').disabled = false;
+            document.getElementById('btn-gerar-pix').textContent = 'Pagar com PIX';
+
+            document.getElementById('status-pending').style.display = 'none';
+            document.getElementById('status-success').style.display = 'none';
+            document.getElementById('status-error').style.display = 'none';
+
+            fetch('/cancelar-pix', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            }).catch(error => console.error('Erro ao cancelar PIX:', error));
+        });
+
     </script>
 </body>
+
 </html>
