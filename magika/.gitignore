@@ -1,0 +1,4 @@
+.env
+.pem
+*.pem
+webhooktest.log
